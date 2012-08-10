@@ -567,11 +567,12 @@ class ContentTypeService implements ContentTypeServiceInterface
 
         $spiFieldDefinition->fieldTypeConstraints->validators = $fieldDefinitionCreateStruct->validatorConfiguration;
         $spiFieldDefinition->fieldTypeConstraints->fieldSettings = $fieldDefinitionCreateStruct->fieldSettings;
-        $spiFieldDefinition->defaultValue = $fieldType->toPersistenceValue(
-            isset( $fieldDefinitionCreateStruct->defaultValue )
-                ? $fieldType->acceptValue( $fieldDefinitionCreateStruct->defaultValue )
-                : $fieldType->getEmptyValue()
-        );
+        if ( isset( $fieldDefinitionCreateStruct->defaultValue ) )
+        {
+            $spiFieldDefinition->defaultValue = $fieldType->toPersistenceValue(
+                $fieldType->acceptValue( $fieldDefinitionCreateStruct->defaultValue )
+            );
+        }
 
         return $spiFieldDefinition;
     }
@@ -631,11 +632,12 @@ class ContentTypeService implements ContentTypeServiceInterface
 
         $spiFieldDefinition->fieldTypeConstraints->validators = $fieldDefinitionUpdateStruct->validatorConfiguration;
         $spiFieldDefinition->fieldTypeConstraints->fieldSettings = $fieldDefinitionUpdateStruct->fieldSettings;
-        $spiFieldDefinition->defaultValue = $fieldType->toPersistenceValue(
-            isset( $fieldDefinitionUpdateStruct->defaultValue )
-                ? $fieldType->acceptValue( $fieldDefinitionUpdateStruct->defaultValue )
-                : $fieldType->getEmptyValue()
-        );
+        if ( isset( $fieldDefinitionUpdateStruct->defaultValue ) )
+        {
+            $fieldType->toPersistenceValue(
+                $fieldType->acceptValue( $fieldDefinitionUpdateStruct->defaultValue )
+            );
+        }
 
         return $spiFieldDefinition;
     }

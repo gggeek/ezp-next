@@ -69,6 +69,25 @@ class Type extends FieldType
     }
 
     /**
+     * Returns true if value is considered empty else returns false
+     *
+     * @param mixed $value
+     *
+     * @return boolean
+     */
+    public function isEmpty( $value )
+    {
+        if ( !isset( $value ) )
+        {
+            return true;
+        }
+
+        $value = $this->acceptValue( $value );
+
+        return strlen( $value->text ) === 0;
+    }
+
+    /**
      * Checks the type and structure of the $Value.
      *
      * @throws \eZ\Publish\API\Repository\Exceptions\InvalidArgumentException if the parameter is not of the supported value sub type

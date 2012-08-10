@@ -158,6 +158,15 @@ interface FieldType
     public function getEmptyValue();
 
     /**
+     * Returns true if value is considered empty else returns false
+     *
+     * @param mixed $value
+     *
+     * @return boolean
+     */
+    public function isEmpty( $value );
+
+    /**
      * Potentially builds and checks the type and structure of the $inputValue.
      *
      * This method first inspects $inputValue, if it needs to convert it, e.g.

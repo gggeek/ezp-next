@@ -469,11 +469,17 @@ class ContentService implements ContentServiceInterface
                 }
                 else
                 {
-                    $fieldValue = $fieldType->acceptValue( $fieldDefinition->defaultValue );
+                    if ( $fieldType->isEmpty( $fieldDefinition->defaultValue ) )
+                    {
+                        $fieldValue = $fieldType->getEmptyValue();
+                    }
+                    else
+                    {
+                        $fieldValue = $fieldType->acceptValue( $fieldDefinition->defaultValue );
+                    }
                 }
 
-                // ... && !$fieldType->hasContent( $fieldValue )
-                if ( $fieldDefinition->isRequired && (string)$fieldValue === "" )
+                if ( $fieldDefinition->isRequired && $fieldType->isEmpty( $fieldValue ) )
                 {
                     throw new ContentValidationException( "Required field '{$fieldDefinition->identifier}' value is empty" );
                 }

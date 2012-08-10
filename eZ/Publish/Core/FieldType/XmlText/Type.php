@@ -25,6 +25,13 @@ use eZ\Publish\API\Repository\Values\Content\Field,
  */
 class Type extends FieldType
 {
+    const EMPTY_EZXML_VALUE = <<<EOF
+<?xml version="1.0" encoding="utf-8"?>
+<section xmlns:image="http://ez.no/namespaces/ezpublish3/image/"
+         xmlns:xhtml="http://ez.no/namespaces/ezpublish3/xhtml/"
+         xmlns:custom="http://ez.no/namespaces/ezpublish3/custom/" />
+EOF;
+
     /**
      * Default preset of tags available in online editor
      */
@@ -101,13 +108,27 @@ class Type extends FieldType
      */
     public function getEmptyValue()
     {
-        $value = <<<EOF
-<?xml version="1.0" encoding="utf-8"?>
-<section xmlns:image="http://ez.no/namespaces/ezpublish3/image/"
-         xmlns:xhtml="http://ez.no/namespaces/ezpublish3/xhtml/"
-         xmlns:custom="http://ez.no/namespaces/ezpublish3/custom/" />
-EOF;
+        $value = self::EMPTY_EZXML_VALUE;
         return new Value( $this->inputHandler, $value, Value::INPUT_FORMAT_RAW );
+    }
+
+    /**
+     * Returns true if value is considered empty else returns false
+     *
+     * @param mixed $value
+     *
+     * @return boolean
+     */
+    public function isEmpty( $value )
+    {
+        if ( !isset( $value ) )
+        {
+            return true;
+        }
+
+        $value = $this->acceptValue( $value );
+
+        return strlen( $value->text ) === 0 || $value->text === self::EMPTY_EZXML_VALUE;
     }
 
     /**
