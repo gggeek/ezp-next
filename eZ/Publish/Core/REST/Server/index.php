@@ -74,7 +74,7 @@ if ( isset( $_SERVER['HTTP_X_TEST_SESSION'] ) )
  * for the integration tests, is re-used here.
  */
 $setupFactory = new \eZ\Publish\API\Repository\Tests\SetupFactory\Legacy();
-$repository   = $setupFactory->getRepository( $reInitializeRepository );
+$repository   = $setupFactory->getRepository( false );
 
 /*
  * The following reflects a standard REST server setup
