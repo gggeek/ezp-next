@@ -10,17 +10,11 @@
 namespace eZ\Publish\Core\MVC\Legacy\Kernel;
 
 use ezpKernelHandler,
-    eZScript,
     RuntimeException,
     eZ\Publish\Core\MVC\Symfony\SiteAccess;
 
 class CLIHandler implements ezpKernelHandler
 {
-    /**
-     * @var \eZScript
-     */
-    protected $script;
-
     /**
      * Constructor
      *
@@ -29,12 +23,6 @@ class CLIHandler implements ezpKernelHandler
      */
     public function __construct( array $settings = array(), SiteAccess $siteAccess = null )
     {
-        $this->script = eZScript::instance( $settings );
-        $this->script->startup();
-        if ( isset( $siteAccess ) )
-            $this->script->setUseSiteAccess( $siteAccess->name );
-
-        $this->script->initialize();
     }
 
     /**
@@ -60,10 +48,6 @@ class CLIHandler implements ezpKernelHandler
     public function runCallback( \Closure $callback, $postReinitialize = true )
     {
         $return = $callback();
-        $this->script->shutdown();
-        if ( !$postReinitialize )
-            $this->script->setIsInitialized( true );
-
         return $return;
     }
 
@@ -84,6 +68,5 @@ class CLIHandler implements ezpKernelHandler
      */
     public function reInitialize()
     {
-        $this->script->setIsInitialized( false );
     }
 }
