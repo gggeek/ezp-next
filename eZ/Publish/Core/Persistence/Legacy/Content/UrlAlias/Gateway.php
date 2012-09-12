@@ -19,11 +19,10 @@ abstract class Gateway
      *
      * @param mixed $locationId
      * @param boolean $custom
-     * @param array $prioritizedLanguageCodes
      *
      * @return array
      */
-    abstract public function loadUrlAliasListDataByLocationId( $locationId, $custom = false, array $prioritizedLanguageCodes );
+    abstract public function loadUrlAliasListDataByLocationId( $locationId, $custom = false );
 
     /**
      *
@@ -153,22 +152,32 @@ abstract class Gateway
      * @param string[] $prioritizedLanguageCodes
      *
      * @return string
+     * @todo remove
      */
     abstract public function getPath( $id, array $prioritizedLanguageCodes );
+
+
+    /**
+     *
+     *
+     * @param mixed $id
+     *
+     * @return array
+     */
+    abstract public function loadPathData( $id );
 
     /**
      * Loads basic URL alias data
      *
-     * Note: columns for end URL part row are not aliased
-     *
-     * @param string[] $urlElements URL string broken into array of URL parts
-     * @param string[] $languageCodes Languages to match against
+     * @param string $url URL string
      *
      * @return array
      */
-    abstract public function loadBasicUrlAliasData( array $urlElements, array $languageCodes );
+    abstract public function loadUrlAliasData( $url );
 
     abstract public function getLocationUrlAliasLanguageCodes( array $actions, array $prioritizedLanguageCodes );
+
+    abstract public function getLocationUrlAliasLanguageCodes2( $action );
 
     /**
      *

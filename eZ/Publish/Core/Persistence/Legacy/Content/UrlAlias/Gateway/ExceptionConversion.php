@@ -191,20 +191,6 @@ class ExceptionConversion extends Gateway
     }
 
     /**
-     * Loads basic URL alias data
-     *
-     * Note that columns for end URL part row are not aliased
-     *
-     * @param string[] $urlElements URL string broken into array of URL parts
-     * @param string[] $languageCodes Languages to match against
-     *
-     * @return array
-     */
-    public function loadBasicUrlAliasData( array $urlElements, array $languageCodes )
-    {
-    }
-
-    /**
      *
      *
      * @param string $action

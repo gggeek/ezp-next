@@ -86,11 +86,10 @@ class EzcDatabase extends Gateway
      *
      * @param mixed $locationId
      * @param boolean $custom
-     * @param array $prioritizedLanguageCodes
      *
      * @return array
      */
-    public function loadUrlAliasListDataByLocationId( $locationId, $custom = false, array $prioritizedLanguageCodes )
+    public function loadUrlAliasListDataByLocationId( $locationId, $custom = false )
     {
         $query = $this->dbHandler->createSelectQuery();
         $query->select(
@@ -118,7 +117,7 @@ class EzcDatabase extends Gateway
                     $this->dbHandler->quoteColumn( "is_alias" ),
                     $query->bindValue(
                         $custom ? 1 : 0,
-                        null, \PDO::PARAM_STR
+                        null, \PDO::PARAM_INT
                     )
                 )
             )
@@ -126,22 +125,7 @@ class EzcDatabase extends Gateway
         $statement = $query->prepare();
         $statement->execute();
 
-        $rows = $statement->fetchAll( \PDO::FETCH_ASSOC );
-        foreach ( $rows as &$row )
-        {
-            $row["path"] = $this->getPath( $row["id"], $prioritizedLanguageCodes );
-            $row["type"] = $row["is_alias"] ? UrlAlias::VIRTUAL : UrlAlias::LOCATION;
-            $row["forward"] = $row["is_alias"] && $row["alias_redirects"];
-            $row["destination"] = $locationId;
-            $row["always_available"] = (bool)( $row["lang_mask"] & 1 );
-            //$row["language_codes"] = array();
-            foreach ( $this->languageMaskGenerator->extractLanguageIdsFromMask( $row["lang_mask"] ) as $languageId )
-            {
-                $row["language_codes"][] = $this->languageHandler->load( $languageId )->languageCode;
-            }
-        }
-
-        return $rows;
+        return $statement->fetchAll( \PDO::FETCH_ASSOC );
     }
 
     /**
@@ -750,48 +734,34 @@ class EzcDatabase extends Gateway
     /**
      * Loads basic URL alias data
      *
-     * Note that columns for end URL part row are not aliased
-     *
-     * @param string[] $urlElements URL string broken into array of URL parts
-     * @param string[] $languageCodes Languages to match against
+     * @param string $url URL string
      *
      * @return array
      */
-    public function loadBasicUrlAliasData( array $urlElements, array $languageCodes )
+    public function loadUrlAliasData( $url )
     {
+        $urlElements = explode( "/", $url );
         $query = $this->dbHandler->createSelectQuery();
-        $lastTableName = "ezurlalias_ml" . ( count( $urlElements ) - 1 );
-        $languageMask = $this->generateLanguageMask( $languageCodes, true );
 
-        $query->select(
-            $this->dbHandler->quoteColumn( "id", $lastTableName ),
-            $this->dbHandler->quoteColumn( "link", $lastTableName ),
-            $this->dbHandler->quoteColumn( "is_alias", $lastTableName ),
-            $this->dbHandler->quoteColumn( "alias_redirects", $lastTableName ),
-            $this->dbHandler->quoteColumn( "action", $lastTableName ),
-            $this->dbHandler->quoteColumn( "is_original", $lastTableName ),
-            $this->dbHandler->quoteColumn( "lang_mask", $lastTableName ),
-            $this->dbHandler->quoteColumn( "parent", $lastTableName ),
-            $this->dbHandler->quoteColumn( "text_md5", $lastTableName )
-        );
         foreach ( $urlElements as $index => $urlElement )
         {
-            $tableName = "ezurlalias_ml{$index}";
+            $tableName = "ezurlalias_ml" . $index;
 
             $query->select(
+                $this->dbHandler->aliasedColumn( $query, "id", $tableName ),
+                $this->dbHandler->aliasedColumn( $query, "link", $tableName ),
+                $this->dbHandler->aliasedColumn( $query, "is_alias", $tableName ),
+                $this->dbHandler->aliasedColumn( $query, "alias_redirects", $tableName ),
+                $this->dbHandler->aliasedColumn( $query, "is_original", $tableName ),
+                $this->dbHandler->aliasedColumn( $query, "action", $tableName ),
+                $this->dbHandler->aliasedColumn( $query, "lang_mask", $tableName ),
                 $this->dbHandler->aliasedColumn( $query, "text", $tableName ),
-                $this->dbHandler->aliasedColumn( $query, "action", $tableName )
+                $this->dbHandler->aliasedColumn( $query, "parent", $tableName ),
+                $this->dbHandler->aliasedColumn( $query, "text_md5", $tableName )
             )->from(
                 $query->alias( "ezurlalias_ml", $tableName )
             )->where(
                 $query->expr->lAnd(
-                    $query->expr->gt(
-                        $query->expr->bitAnd(
-                            $this->dbHandler->quoteColumn( "lang_mask", $tableName ),
-                            $query->bindValue( $languageMask, null, \PDO::PARAM_INT )
-                        ),
-                        $query->bindValue( 0, null, \PDO::PARAM_INT )
-                    ),
                     $query->expr->eq(
                         $this->dbHandler->quoteColumn( "text_md5", $tableName ),
                         $query->bindValue( $this->getHash( $urlElement ), null, \PDO::PARAM_STR )
@@ -800,7 +770,7 @@ class EzcDatabase extends Gateway
                         $this->dbHandler->quoteColumn( "parent", $tableName ),
                         // root entry has parent column set to 0
                         isset( $previousTableName )
-                            ? $this->dbHandler->quoteColumn( "id", $previousTableName )
+                            ? $this->dbHandler->quoteColumn( "link", $previousTableName )
                             : $query->bindValue( 0, null, \PDO::PARAM_INT )
                     )
                 )
@@ -812,22 +782,8 @@ class EzcDatabase extends Gateway
 
         $statement = $query->prepare();
         $statement->execute();
-        $row = $statement->fetch( \PDO::FETCH_ASSOC );
 
-        if ( !empty( $row ) )
-        {
-            // Note: this will only be sufficient for UrlAlias::VIRTUAL and UrlAlias::RESOURCE type URLs, as these
-            // can have only one language per alias. If URL alias is of type UrlAlias::LOCATION additional query will
-            // be needed to determine all the languages that it is available in. This is done from Handler.
-            // @todo maybe add always available language indicator
-            $row["language_codes"] = array();
-            foreach ( $this->languageMaskGenerator->extractLanguageIdsFromMask( $row["lang_mask"] ) as $languageId )
-            {
-                $row["language_codes"][] = $this->languageHandler->load( $languageId )->languageCode;
-            }
-        }
-
-        return $row;
+        return $statement->fetch( \PDO::FETCH_ASSOC );
     }
 
     /**
@@ -840,6 +796,7 @@ class EzcDatabase extends Gateway
      * @param array $prioritizedLanguageCodes
      *
      * @return array
+     * @todo remove
      */
     public function getLocationUrlAliasLanguageCodes( array $actions, array $prioritizedLanguageCodes )
     {
@@ -929,6 +886,56 @@ class EzcDatabase extends Gateway
 
             return $actualLanguageCodes;
         }
+    }
+
+    /**
+     * This method is used when URL alias is of type UrlAlias::LOCATION in order to determine all the languages
+     * that it is available in.
+     *
+     * @param string $action
+     *
+     * @return array
+     * @todo rename
+     */
+    public function getLocationUrlAliasLanguageCodes2( $action )
+    {
+        $query = $this->dbHandler->createSelectQuery();
+        $query->select(
+            $this->dbHandler->quoteColumn( "lang_mask" )
+        )->from(
+            $this->dbHandler->quoteTable( "ezurlalias_ml" )
+        )->where(
+            $query->expr->lAnd(
+                $query->expr->eq(
+                    $this->dbHandler->quoteColumn( "action" ),
+                    $query->bindValue( $action, null, \PDO::PARAM_STR )
+                ),
+                $query->expr->eq(
+                    $this->dbHandler->quoteColumn( "is_original" ),
+                    $query->bindValue( 1, null, \PDO::PARAM_INT )
+                ),
+                $query->expr->eq(
+                    $this->dbHandler->quoteColumn( "is_alias" ),
+                    $query->bindValue( 0, null, \PDO::PARAM_INT )
+                )
+            )
+        );
+
+        $statement = $query->prepare();
+        $statement->execute();
+
+        $rows = $statement->fetchAll( \PDO::FETCH_ASSOC );
+
+        $languageCodes = array();
+        foreach ( $rows as $row )
+        {
+            foreach ( $this->languageMaskGenerator->extractLanguageIdsFromMask( $row["lang_mask"] ) as $languageId )
+            {
+                $languageCodes[$this->languageHandler->load( $languageId )->languageCode] = true;
+            }
+        }
+
+        return array_keys( $languageCodes );
     }
 
     /**
@@ -1158,15 +1165,13 @@ class EzcDatabase extends Gateway
     }
 
     /**
-     * @todo document
-     *
-     * @todo remove throw when tested
      * @throws \RuntimeException
      *
      * @param mixed $id
      * @param string[] $prioritizedLanguageCodes
      *
      * @return string path string
+     * @todo remove
      */
     public function getPath( $id, array $prioritizedLanguageCodes )
     {
@@ -1211,6 +1216,56 @@ class EzcDatabase extends Gateway
         }
 
         return empty( $pathData ) ? "/" : join( "/", $pathData );
+    }
+
+    /**
+     *
+     *
+     * @throws \RuntimeException
+     *
+     * @param mixed $id
+     *
+     * @return array
+     */
+    public function loadPathData( $id )
+    {
+        $pathData = array();
+
+        while ( $id != 0 )
+        {
+            $query = $this->dbHandler->createSelectQuery();
+            $query->select(
+                $this->dbHandler->quoteColumn( "id" ),
+                $this->dbHandler->quoteColumn( "parent" ),
+                $this->dbHandler->quoteColumn( "lang_mask" ),
+                $this->dbHandler->quoteColumn( "text" )
+            )->from(
+                $this->dbHandler->quoteTable( "ezurlalias_ml" )
+            )->where(
+                $query->expr->eq(
+                    $this->dbHandler->quoteColumn( "id" ),
+                    $query->bindValue( $id, null, \PDO::PARAM_INT )
+                )
+            );
+
+            $statement = $query->prepare();
+            $statement->execute();
+
+            $rows = $statement->fetchAll( \PDO::FETCH_ASSOC );
+            if ( count( $rows ) == 0 )
+            {
+                // Normally this should never happen
+                // @todo remove throw when tested
+                $path = join( "/", $pathData );
+                throw new \RuntimeException( "Path ({$path}...) is broken, last id is '{$id}': " . __METHOD__ );
+                //break;
+            }
+
+            $id = $rows[0]["parent"];
+            array_unshift( $pathData, $rows );
+        }
+
+        return $pathData;
     }
 
     /**

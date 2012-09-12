@@ -49,6 +49,7 @@ class EzcDatabaseTest extends TestCase
      * Test for the loadBasicUrlAliasData() method.
      *
      * @covers eZ\Publish\Core\Persistence\Legacy\Content\Type\Gateway\EzcDatabase::loadBasicUrlAliasData
+     * @todo remove
      */
     public function testLoadBasicUrlaliasDataNonExistent()
     {
@@ -60,6 +61,25 @@ class EzcDatabaseTest extends TestCase
         self::assertEmpty( $rows );
     }
 
+    /**
+     * Test for the loadUrlAliasData() method.
+     *
+     * @covers eZ\Publish\Core\Persistence\Legacy\Content\Type\Gateway\EzcDatabase::loadUrlAliasData
+     * @group refactoring
+     */
+    public function testLoadUrlaliasDataNonExistent()
+    {
+        $this->insertDatabaseFixture( __DIR__ . "/_fixtures/urlaliases_simple.php" );
+        $gateway = $this->getGateway();
+
+        $rows = $gateway->loadUrlAliasData( "tri" );
+
+        self::assertEmpty( $rows );
+    }
+
+    /**
+     * @todo remove
+     */
     protected function getSimpleFixtureResult()
     {
         return array(
@@ -84,6 +104,7 @@ class EzcDatabaseTest extends TestCase
      * Test for the loadBasicUrlAliasData() method.
      *
      * @covers eZ\Publish\Core\Persistence\Legacy\Content\Type\Gateway\EzcDatabase::loadBasicUrlAliasData
+     * @todo remove
      */
     public function testLoadBasicUrlaliasData()
     {
@@ -98,10 +119,52 @@ class EzcDatabaseTest extends TestCase
         );
     }
 
+    protected function getSimpleFixtureResult2()
+    {
+        return array(
+            "id" =>  "3",
+            "link" =>  "3",
+            "is_alias" => "0",
+            "alias_redirects" => "1",
+            "action" => "eznode:315",
+            "is_original" => "1",
+            "ezurlalias_ml0_text" => "jedan",
+            "ezurlalias_ml1_text" => "dva",
+            "lang_mask" => "3",
+            "language_codes" => array( "cro-HR" ),
+            "parent" => "2",
+            "text_md5" => "c67ed9a09ab136fae610b6a087d82e21",
+            "ezurlalias_ml0_action" => "eznode:314",
+            "ezurlalias_ml0_lang_mask" => "2",
+            "ezurlalias_ml1_action" => "eznode:315",
+            "ezurlalias_ml1_lang_mask" => "3"
+        );
+    }
+
+    /**
+     * Test for the loadUrlAliasData() method.
+     *
+     * @covers eZ\Publish\Core\Persistence\Legacy\Content\Type\Gateway\EzcDatabase::loadUrlAliasData
+     * @group refactoring
+     */
+    public function testLoadUrlaliasData()
+    {
+        $this->insertDatabaseFixture( __DIR__ . "/_fixtures/urlaliases_simple.php" );
+        $gateway = $this->getGateway();
+
+        $row = $gateway->loadUrlAliasData( "jedan/dva" );
+
+        self::assertEquals(
+            $this->getSimpleFixtureResult2(),
+            $row
+        );
+    }
+
     /**
      * Test for the loadBasicUrlAliasData() method.
      *
      * @covers eZ\Publish\Core\Persistence\Legacy\Content\Type\Gateway\EzcDatabase::loadBasicUrlAliasData
+     * @todo remove
      */
     public function testLoadBasicUrlaliasDataIsCaseInsensitive()
     {
@@ -117,11 +180,31 @@ class EzcDatabaseTest extends TestCase
     }
 
     /**
+     * Test for the loadUrlAliasData() method.
+     *
+     * @covers eZ\Publish\Core\Persistence\Legacy\Content\Type\Gateway\EzcDatabase::loadUrlAliasData
+     * @group refactoring
+     */
+    public function testLoadUrlaliasDataIsCaseInsensitive()
+    {
+        $this->insertDatabaseFixture( __DIR__ . "/_fixtures/urlaliases_simple.php" );
+        $gateway = $this->getGateway();
+
+        $row = $gateway->loadUrlAliasData( "JEDAN/DVA" );
+
+        self::assertEquals(
+            $this->getSimpleFixtureResult2(),
+            $row
+        );
+    }
+
+    /**
      * Test for the loadBasicUrlAliasData() method.
      *
      * Test with fixture containing language mask with multiple languages.
      *
      * @covers eZ\Publish\Core\Persistence\Legacy\Content\Type\Gateway\EzcDatabase::loadBasicUrlAliasData
+     * @todo remove
      */
     public function testLoadBasicUrlaliasDataMultipleLanguages()
     {
@@ -153,6 +236,45 @@ class EzcDatabaseTest extends TestCase
         self::assertEquals( $expectedResult, $row3 );
     }
 
+    /**
+     * Test for the loadUrlAliasData() method.
+     *
+     * Test with fixture containing language mask with multiple languages.
+     *
+     * @covers eZ\Publish\Core\Persistence\Legacy\Content\Type\Gateway\EzcDatabase::loadUrlAliasData
+     * @group refactoring
+     */
+    public function testLoadUrlaliasDataMultipleLanguages()
+    {
+        $this->insertDatabaseFixture( __DIR__ . "/_fixtures/urlaliases_multilang.php" );
+        $gateway = $this->getGateway();
+        $expectedResult = array(
+            "id" =>  "3",
+            "link" =>  "3",
+            "is_alias" => "0",
+            "alias_redirects" => "1",
+            "action" => "eznode:315",
+            "is_original" => "1",
+            "ezurlalias_ml0_text" => "jedan",
+            "ezurlalias_ml1_text" => "dva",
+            "lang_mask" => "6",
+            "language_codes" => array( "cro-HR", "eng-GB" ),
+            "parent" => "2",
+            "text_md5" => "c67ed9a09ab136fae610b6a087d82e21",
+            "ezurlalias_ml0_action" => "eznode:314",
+            "ezurlalias_ml0_lang_mask" => "3",
+            "ezurlalias_ml1_action" => "eznode:315",
+            "ezurlalias_ml1_lang_mask" => "6"
+        );
+
+        $row = $gateway->loadUrlAliasData( "jedan/dva" );
+
+        self::assertEquals( $expectedResult, $row );
+    }
+
+    /**
+     * @todo remove
+     */
     public function providerForTestGetPath()
     {
         return array(
@@ -231,6 +353,7 @@ class EzcDatabaseTest extends TestCase
      * @covers eZ\Publish\Core\Persistence\Legacy\Content\Type\Gateway\EzcDatabase::choosePrioritizedRow
      * @covers eZ\Publish\Core\Persistence\Legacy\Content\Type\Gateway\EzcDatabase::languageScore
      * @dataProvider providerForTestGetPath
+     * @todo remove
      */
     public function testGetPath( $id, array $prioritizedLanguageCodes, $expectedPath )
     {
@@ -243,6 +366,9 @@ class EzcDatabaseTest extends TestCase
         );
     }
 
+    /**
+     * @todo remove
+     */
     public function providerForTestGetPathMultipleLanguages()
     {
         return array(
@@ -298,6 +424,7 @@ class EzcDatabaseTest extends TestCase
      * @covers eZ\Publish\Core\Persistence\Legacy\Content\Type\Gateway\EzcDatabase::choosePrioritizedRow
      * @covers eZ\Publish\Core\Persistence\Legacy\Content\Type\Gateway\EzcDatabase::languageScore
      * @dataProvider providerForTestGetPathMultipleLanguages
+     * @todo remove
      */
     public function testGetPathMultipleLanguages( $id, array $prioritizedLanguageCodes, $expectedPath )
     {
@@ -314,6 +441,7 @@ class EzcDatabaseTest extends TestCase
      * Test for the getPath() method.
      *
      * @covers eZ\Publish\Core\Persistence\Legacy\Content\Type\Gateway\EzcDatabase::getPath
+     * @todo remove
      */
     public function testGetPathWithFallbackToArbitraryLanguage()
     {
@@ -338,6 +466,129 @@ class EzcDatabaseTest extends TestCase
         {
             self::fail( "Fallback to arbitrary language not matched" );
         }
+    }
+
+    public function providerForTestLoadPathData()
+    {
+        return array(
+            array(
+                2,
+                array(
+                    array(
+                        array( "id" => "2", "parent" => "0", "lang_mask" => "3", "text" => "jedan" ),
+                    ),
+                )
+            ),
+            array(
+                3,
+                array(
+                    array(
+                        array( "id" => "2", "parent" => "0", "lang_mask" => "3", "text" => "jedan" ),
+                    ),
+                    array(
+                        array( "id" => "3", "parent" => "2", "lang_mask" => "5", "text" => "two" ),
+                        array( "id" => "3", "parent" => "2", "lang_mask" => "3", "text" => "dva" ),
+                    ),
+                )
+            ),
+            array(
+                4,
+                array(
+                    array(
+                        array( "id" => "2", "parent" => "0", "lang_mask" => "3", "text" => "jedan" ),
+                    ),
+                    array(
+                        array( "id" => "3", "parent" => "2", "lang_mask" => "5", "text" => "two" ),
+                        array( "id" => "3", "parent" => "2", "lang_mask" => "3", "text" => "dva" ),
+                    ),
+                    array(
+                        array( "id" => "4", "parent" => "3", "lang_mask" => "9", "text" => "drei" ),
+                        array( "id" => "4", "parent" => "3", "lang_mask" => "5", "text" => "three" ),
+                        array( "id" => "4", "parent" => "3", "lang_mask" => "3", "text" => "tri" ),
+                    ),
+                )
+            ),
+        );
+    }
+
+    /**
+     * Test for the loadPathData() method.
+     *
+     * @covers eZ\Publish\Core\Persistence\Legacy\Content\Type\Gateway\EzcDatabase::loadPathData
+     * @dataProvider providerForTestLoadPathData
+     * @group refactoring
+     */
+    public function testLoadPathData( $id, $pathData )
+    {
+        $this->insertDatabaseFixture( __DIR__ . "/_fixtures/urlaliases_fallback.php" );
+        $gateway = $this->getGateway();
+
+        $loadedPathData = $gateway->loadPathData( $id );
+
+        self::assertEquals(
+            $pathData,
+            $loadedPathData
+        );
+    }
+
+    public function providerForTestLoadPathDataMultipleLanguages()
+    {
+        return array(
+            array(
+                2,
+                array(
+                    array(
+                        array( "id" => "2", "parent" => "0", "lang_mask" => "3", "text" => "jedan" ),
+                    ),
+                )
+            ),
+            array(
+                3,
+                array(
+                    array(
+                        array( "id" => "2", "parent" => "0", "lang_mask" => "3", "text" => "jedan" ),
+                    ),
+                    array(
+                        array( "id" => "3", "parent" => "2", "lang_mask" => "6", "text" => "dva" ),
+                    ),
+                )
+            ),
+            array(
+                4,
+                array(
+                    array(
+                        array( "id" => "2", "parent" => "0", "lang_mask" => "3", "text" => "jedan" ),
+                    ),
+                    array(
+                        array( "id" => "3", "parent" => "2", "lang_mask" => "6", "text" => "dva" ),
+                    ),
+                    array(
+                        array( "id" => "4", "parent" => "3", "lang_mask" => "4", "text" => "three" ),
+                        array( "id" => "4", "parent" => "3", "lang_mask" => "2", "text" => "tri" ),
+                    ),
+                )
+            ),
+        );
+    }
+
+    /**
+     * Test for the loadPathData() method.
+     *
+     * @covers eZ\Publish\Core\Persistence\Legacy\Content\Type\Gateway\EzcDatabase::loadPathData
+     * @dataProvider providerForTestLoadPathDataMultipleLanguages
+     * @group refactoring
+     */
+    public function testLoadPathDataMultipleLanguages( $id, $pathData )
+    {
+        $this->insertDatabaseFixture( __DIR__ . "/_fixtures/urlaliases_multilang.php" );
+        $gateway = $this->getGateway();
+
+        $loadedPathData = $gateway->loadPathData( $id );
+
+        self::assertEquals(
+            $pathData,
+            $loadedPathData
+        );
     }
 
     public function providerForTestDowngradeMarksAsHistory()

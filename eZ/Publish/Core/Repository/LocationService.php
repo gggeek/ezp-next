@@ -482,6 +482,22 @@ class LocationService implements LocationServiceInterface
         try
         {
             $newLocation = $this->persistenceHandler->locationHandler()->create( $createStruct );
+            $content = $this->repository->getContentService()->loadContent( $newLocation->contentId );
+
+            $urlAliasNames = $this->repository->getNameSchemaService()->resolveUrlAliasSchema( $content );
+            $alwaysAvailableLanguageCode = ( isset( $urlAliasNames["always-available"] ) && isset( $urlAliasNames[$urlAliasNames["always-available"]] ) )
+                ? $urlAliasNames[$urlAliasNames["always-available"]]
+                : null;
+            foreach ( $urlAliasNames as $languageCode => $name )
+            {
+                $this->persistenceHandler->urlAliasHandler()->publishUrlAliasForLocation(
+                    $newLocation->id,
+                    $name,
+                    $languageCode,
+                    $languageCode === $alwaysAvailableLanguageCode
+                );
+            }
+
             $this->repository->commit();
         }
         catch ( \Exception $e )
